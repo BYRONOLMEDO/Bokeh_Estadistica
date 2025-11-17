@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Suite CSV — Chart.js + JS (GitHub Pages)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Librerías: PapaParse (CSV) + Chart.js (gráficos) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --card:#020617;
+      --muted:#64748b;
+      --text:#e5e7eb;
+      --accent:#22d3ee;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --border:#1f2937;
+      --light-bg:#ffffff;
+      --light-text:#111827;
+      --light-muted:#4b5563;
+      --light-border:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(circle at top,#0b1120,#020617 55%);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:16px 16px 32px;
+    }
+    h1{
+      font-size:1.5rem;
+      margin:8px 0 4px;
+    }
+    h2{
+      font-size:1.1rem;
+      margin:0 0 8px;
+    }
+    .card{
+      background:rgba(15,23,42,0.98);
+      border-radius:18px;
+      border:1px solid var(--border);
+      padding:16px 18px;
+      margin-top:12px;
+      box-shadow:0 24px 45px rgba(0,0,0,0.55);
+    }
+    .card.light{
+      background:var(--light-bg);
+      border-color:var(--light-border);
+      color:var(--light-text);
+      box-shadow:0 12px 30px rgba(15,23,42,0.15);
+    }
+    header{
+      margin-bottom:6px;
+    }
+    header small{
+      font-size:0.8rem;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+    }
+    p.desc{
+      font-size:0.84rem;
+      color:var(--muted);
+      max-width:820px;
+    }
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+    .col{
+      flex:1;
+      min-width:260px;
+    }
+    label{
+      display:block;
+      font-size:0.78rem;
+      text-transform:uppercase;
+      letter-spacing:0.03em;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    select,
+    input[type="number"],
+    input[type="text"],
+    input[type="file"]{
+      width:100%;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:var(--text);
+      font-size:0.85rem;
+    }
+    select[multiple]{
+      min-height:120px;
+    }
+    .checkbox-row{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-top:6px;
+    }
+    .checkbox-row input{
+      width:auto;
+    }
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger{
+      border:none;
+      border-radius:999px;
+      padding:8px 18px;
+      font-size:0.85rem;
+      font-weight:600;
+      cursor:pointer;
+      margin-top:8px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:#0f172a;
+    }
+    .btn-primary:hover{filter:brightness(1.05);}
+    .btn-secondary{
+      background:#111827;
+      color:var(--muted);
+      border:1px solid #1f2937;
+    }
+    .btn-danger{
+      background:var(--danger);
+      color:#fee2e2;
+    }
+    .alert{
+      border-radius:12px;
+      padding:8px 10px;
+      font-size:0.8rem;
+      margin-top:6px;
+    }
+    .alert-ok{
+      background:#022c22;
+      border:1px solid #065f46;
+      color:#bbf7d0;
+    }
+    .alert-error{
+      background:#450a0a;
+      border:1px solid #b91c1c;
+      color:#fecaca;
+    }
+    .alert-info{
+      background:#020617;
+      border:1px solid var(--border);
+      color:var(--muted);
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      padding:3px 8px;
+      font-size:0.72rem;
+      background:#020617;
+      border:1px solid #1f2937;
+      color:var(--muted);
+      margin-right:4px;
+      margin-top:2px;
+    }
+    .pill{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#0f172a;
+      border:1px solid #1f2937;
+      font-size:0.7rem;
+      margin-right:4px;
+      margin-top:2px;
+    }
+    table{
+      border-collapse:collapse;
+      width:100%;
+      font-size:0.78rem;
+    }
+    th, td{
+      border:1px solid #1f2937;
+      padding:4px 6px;
+      text-align:left;
+    }
+    th{
+      background:#020617;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .table-light th{
+      background:var(--light-bg);
+      color:var(--light-muted);
+      border-color:var(--light-border);
+    }
+    .table-light td{
+      border-color:var(--light-border);
+    }
+    .notices{
+      margin-top:4px;
+      font-size:0.78rem;
+      color:#fed7aa;
+    }
+    .notices ul{
+      padding-left:18px;
+      margin:4px 0 0;
+    }
+    textarea{
+      width:100%;
+      min-height:130px;
+      font-size:0.78rem;
+      font-family:monospace;
+      background:#020617;
+      color:var(--muted);
+      border-radius:10px;
+      border:1px solid #1f2937;
+      padding:6px 8px;
+      resize:vertical;
+    }
+    @media (max-width:768px){
+      .card{padding:14px 14px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <small>CSV · Estadística · Stack · Split · Chart.js</small>
+      <h1>📊 Suite Para manejo de Consumertec)</h1>
+      <p class="desc">
+        Carga un archivo CSV en el navegador, explora estadísticas, aplica Stack (melt) / Split y genera gráficos
+        interactivos (líneas o barras múltiples) usando Chart.js. Sin Python, todo en el navegador.
+      </p>
+    </header>
+
+    <!-- ========== 1. CARGA CSV ========== -->
+    <div class="card" id="card-upload">
+      <h2>1. Cargar / reemplazar CSV</h2>
+      <div class="row">
+        <div class="col" style="max-width:360px">
+          <label for="csvFileInput">Archivo CSV</label>
+          <input type="file" id="csvFileInput" accept=".csv" />
+          <button class="btn-primary" id="btnLoadCsv">Subir CSV</button>
+          <div id="currentFileInfo" style="margin-top:4px; font-size:0.78rem;"></div>
+        </div>
+        <div class="col">
+          <div id="msgArea"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 2. CONTROLES GRÁFICO ========== -->
+    <div class="card" id="card-chart" style="display:none;">
+      <h2>2. Controles del gráfico principal</h2>
+      <form id="chartForm" onsubmit="return false;">
+        <div class="row">
+          <div class="col">
+            <label for="xSelect">Columna X</label>
+            <select id="xSelect"></select>
+          </div>
+          <div class="col">
+            <label for="ySelect">Columnas Y (múltiples)</label>
+            <select id="ySelect" multiple></select>
+            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">
+              Ctrl/Cmd + clic para elegir varias.
+            </div>
+          </div>
+          <div class="col">
+            <label for="groupSelect">Agrupar por (opcional)</label>
+            <select id="groupSelect" multiple></select>
+            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">
+              Se concatenan para formar una etiqueta de grupo.
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="col">
+            <label for="kindSelect">Tipo de gráfico</label>
+            <select id="kindSelect">
+              <option value="line">Líneas</option>
+              <option value="bar">Barras</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="aggSelect">Agregación</label>
+            <select id="aggSelect">
+              <option value="none">none (fila a fila)</option>
+              <option value="mean">mean</option>
+              <option value="sum">sum</option>
+              <option value="median">median</option>
+              <option value="min">min</option>
+              <option value="max">max</option>
+              <option value="count">count</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="scaleSelect">Escala Y</label>
+            <select id="scaleSelect">
+              <option value="linear">Lineal</option>
+              <option value="logarithmic">Log</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="themeSelect">Tema</label>
+            <select id="themeSelect">
+              <option value="dark" selected>Oscuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="col">
+            <label for="sizeInput">Grosor / tamaño</label>
+            <input type="number" id="sizeInput" min="1" max="40" value="3" />
+          </div>
+          <div class="col">
+            <label for="fontInput">Tamaño de fuente (pt)</label>
+            <input type="number" id="fontInput" min="8" max="28" value="12" />
+          </div>
+          <div class="col">
+            <label>&nbsp;</label>
+            <div class="checkbox-row">
+              <input type="checkbox" id="labelsCheckbox" />
+              <span>Etiquetas de datos</span>
+            </div>
+          </div>
+          <div class="col" style="display:flex; align-items:flex-end; justify-content:flex-end;">
+            <button class="btn-primary" id="btnUpdateChart">Actualizar gráfico</button>
+          </div>
+        </div>
+      </form>
+      <div id="chartNotices" class="notices" style="display:none;"></div>
+
+      <div style="margin-top:12px;">
+        <canvas id="mainChart" height="280"></canvas>
+      </div>
+    </div>
+
+    <!-- ========== 3. ESTADÍSTICA BÁSICA ========== -->
+    <div class="card" id="card-stats" style="display:none;">
+      <h2>3. Estadística básica — Una columna</h2>
+      <div class="row">
+        <div class="col" style="max-width:360px">
+          <label for="statsColSelect">Columna</label>
+          <select id="statsColSelect"></select>
+          <button class="btn-secondary" id="btnStats">Calcular estadística</button>
+        </div>
+        <div class="col" id="statsTableContainer"></div>
+      </div>
+      <div style="margin-top:12px;" id="statsChartsContainer"></div>
+    </div>
+
+    <!-- ========== 4. STACK (MELT) ========== -->
+    <div class="card" id="card-stack" style="display:none;">
+      <h2>4. Stack (melt) — reemplaza df_work</h2>
+      <p class="desc" style="font-size:0.78rem; margin-bottom:6px;">
+        Apila columnas estilo <code>pandas.melt</code>. El resultado reemplaza la tabla de trabajo (df_work).
+      </p>
+      <div class="row">
+        <div class="col">
+          <label for="stackIdVars">id_vars (se mantienen)</label>
+          <select id="stackIdVars" multiple></select>
+        </div>
+        <div class="col">
+          <label for="stackValueVars">value_vars (se apilan)</label>
+          <select id="stackValueVars" multiple></select>
+          <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">
+            Si lo dejas vacío: toma todas las columnas menos id_vars.
+          </div>
+        </div>
+        <div class="col">
+          <label for="stackVarName">var_name</label>
+          <input type="text" id="stackVarName" value="variable" />
+          <label for="stackValueName" style="margin-top:6px;">value_name</label>
+          <input type="text" id="stackValueName" value="value" />
+          <div class="checkbox-row" style="margin-top:6px;">
+            <input type="checkbox" id="stackDropnaCheckbox" />
+            <span style="font-size:0.8rem;">Eliminar filas con value NaN</span>
+          </div>
+          <button class="btn-primary" id="btnStack">Generar STACK</button>
+        </div>
+      </div>
+      <div id="stackResult" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- ========== 5. SPLIT POR VALORES ========== -->
+    <div class="card" id="card-split" style="display:none;">
+      <h2>5. Split por valores (solo informa y vista de tabla)</h2>
+      <div class="row">
+        <div class="col">
+          <label for="splitBaseCol">Col. BASE</label>
+          <select id="splitBaseCol"></select>
+        </div>
+        <div class="col">
+          <label for="splitViewCol">Col. muestra (opcional)</label>
+          <select id="splitViewCol"></select>
+          <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">
+            Solo para visualizar junto con la base, no filtra.
+          </div>
+        </div>
+        <div class="col" style="display:flex; align-items:flex-end;">
+          <button class="btn-primary" id="btnSplit">Hacer Split</button>
+        </div>
+      </div>
+      <div id="splitStatus" style="margin-top:8px;"></div>
+      <div id="splitPreview" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- ========== 6. EXPORTACIÓN FINAL ========== -->
+    <div class="card" id="card-export" style="display:none;">
+      <h2>6. Exportar CSV final — df_work actual</h2>
+      <div class="row">
+        <div class="col">
+          <label for="exportFilename">Nombre de archivo</label>
+          <input type="text" id="exportFilename" value="df_work_final.csv" />
+        </div>
+        <div class="col" style="display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap;">
+          <button class="btn-primary" id="btnExport">Exportar CSV</button>
+          <button class="btn-danger" id="btnResetBase">Volver al CSV original</button>
+        </div>
+      </div>
+      <div id="exportInfo" style="margin-top:8px;"></div>
+      <div id="dfPreview" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   ESTADO GLOBAL
+   dfOriginal  : array de objetos (CSV original)
+   dfWork      : array de objetos (tabla transformada)
+   columns     : array de nombres de columnas
+   fileName    : nombre del archivo actual
+   chart       : instancia Chart.js
+   ============================================================ */
+
+let dfOriginal = null;
+let dfWork = null;
+let columns = [];
+let fileName = null;
+let chart = null;
+
+/* ============================================================
+   UTILIDADES GENERALES
+   ============================================================ */
+
+function showMessage(type, html) {
+  const msgArea = document.getElementById("msgArea");
+  msgArea.innerHTML = "";
+  if (!html) return;
+  const div = document.createElement("div");
+  div.className = "alert " + (type === "error" ? "alert-error" :
+                              type === "ok" ? "alert-ok" :
+                              "alert-info");
+  div.innerHTML = html;
+  msgArea.appendChild(div);
+}
+
+function sanitizeFilename(s) {
+  s = String(s || "").trim().replace(/\s+/g, "_");
+  s = s.replace(/[^A-Za-z0-9_\-\.]/g, "");
+  return s || "archivo";
+}
+
+function dedupeColumns(cols) {
+  const seen = {};
+  const out = [];
+  const renamed = [];
+  for (let c of cols) {
+    const s = String(c);
+    if (!seen[s]) {
+      seen[s] = 1;
+      out.push(s);
+    } else {
+      seen[s]++;
+      const newName = s + "_" + seen[s];
+      out.push(newName);
+      renamed.push([s, newName]);
+    }
+  }
+  return {columns: out, renamed};
+}
+
+function updateCurrentFileInfo() {
+  const el = document.getElementById("currentFileInfo");
+  if (!dfWork) {
+    el.textContent = "CSV no cargado.";
+    return;
+  }
+  const nRows = dfWork.length;
+  const nCols = columns.length;
+  el.innerHTML = `Archivo actual: <span class="pill">${fileName || "(sin nombre)"}</span><br>` +
+                 `<span class="badge">Filas: ${nRows}</span>` +
+                 `<span class="badge">Columnas: ${nCols}</span>`;
+}
+
+/* Convierte dfWork (array de objetos) a tabla HTML (primeras N filas) */
+function dfToHtmlPreview(data, maxRows=10) {
+  if (!data || data.length === 0) {
+    return "<i>Tabla vacía.</i>";
+  }
+  const cols = Object.keys(data[0]);
+  const rows = data.slice(0, maxRows);
+
+  let html = "<table><thead><tr>";
+  for (let c of cols) {
+    html += `<th>${c}</th>`;
+  }
+  html += "</tr></thead><tbody>";
+  for (let r of rows) {
+    html += "<tr>";
+    for (let c of cols) {
+      let v = r[c];
+      if (v === null || v === undefined) v = "";
+      html += `<td>${String(v)}</td>`;
+    }
+    html += "</tr>";
+  }
+  html += "</tbody></table>";
+  return html;
+}
+
+/* ===================== Estadística básica ===================== */
+
+function toNumericArray(arr) {
+  return arr.map(v => {
+    const x = parseFloat(v);
+    return isNaN(x) ? NaN : x;
+  });
+}
+
+function basicStats(series) {
+  const n = series.length;
+  const missing = series.filter(v => v === null || v === undefined || v === "").length;
+  const unique = (new Set(series.filter(v => v !== null && v !== undefined && v !== ""))).size;
+
+  // Intentar numérico
+  const numericArr = toNumericArray(series.filter(v => v !== null && v !== undefined && v !== ""));
+  const numericValid = numericArr.filter(x => !isNaN(x));
+  const numericRatio = numericArr.length ? numericValid.length / numericArr.length : 0;
+
+  if (numericRatio >= 0.6) {
+    if (numericValid.length === 0) {
+      return {
+        type: "numeric",
+        count: n,
+        missing,
+        unique,
+        nValid: 0,
+        mean: null,
+        std: null,
+        se: null,
+        ciLow: null,
+        ciHigh: null,
+        min: null,
+        p25: null,
+        p50: null,
+        p75: null,
+        iqr: null,
+        max: null,
+        values: []
+      };
+    }
+    numericValid.sort((a,b)=>a-b);
+    const m = numericValid.length;
+    const mean = numericValid.reduce((a,b)=>a+b,0) / m;
+    const varSum = numericValid.reduce((a,b)=>a+(b-mean)*(b-mean),0);
+    const std = m>1 ? Math.sqrt(varSum/(m-1)) : 0;
+    const se = m>1 ? std/Math.sqrt(m) : null;
+    const ciLow = se ? (mean - 1.96*se) : null;
+    const ciHigh = se ? (mean + 1.96*se) : null;
+    const min = numericValid[0];
+    const max = numericValid[m-1];
+    const p = (q) => {
+      if (m === 1) return numericValid[0];
+      const idx = (m-1)*q;
+      const lo = Math.floor(idx);
+      const hi = Math.ceil(idx);
+      if (lo === hi) return numericValid[lo];
+      const w = idx - lo;
+      return numericValid[lo]*(1-w) + numericValid[hi]*w;
+    };
+    const p25 = p(0.25);
+    const p50 = p(0.5);
+    const p75 = p(0.75);
+    const iqr = p75 - p25;
+    return {
+      type: "numeric",
+      count: n,
+      missing,
+      unique,
+      nValid: m,
+      mean, std, se, ciLow, ciHigh, min, p25, p50, p75, iqr, max,
+      values: numericValid
+    };
+  }
+
+  // Intentar fecha
+  const dateArr = series
+    .map(v => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    })
+    .filter(d => d !== null);
+  const dateRatio = series.filter(v => v !== null && v !== undefined && v !== "").length
+                      ? dateArr.length / series.filter(v => v !== null && v !== undefined && v !== "").length
+                      : 0;
+  if (dateRatio >= 0.6) {
+    if (dateArr.length === 0) {
+      return {
+        type: "datetime",
+        count: n,
+        missing,
+        unique,
+        min: null,
+        max: null,
+        values: []
+      };
+    }
+    dateArr.sort((a,b)=>a-b);
+    return {
+      type: "datetime",
+      count: n,
+      missing,
+      unique,
+      min: dateArr[0],
+      max: dateArr[dateArr.length-1],
+      values: dateArr
+    };
+  }
+
+  // Categórica
+  const counts = {};
+  for (let v of series) {
+    if (v === null || v === undefined || v === "") continue;
+    const s = String(v);
+    counts[s] = (counts[s] || 0) + 1;
+  }
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const top = entries.length ? entries[0][0] : "";
+  const freq = entries.length ? entries[0][1] : 0;
+  return {
+    type: "categorical",
+    count: n,
+    missing,
+    unique,
+    top,
+    freq,
+    counts: entries
+  };
+}
+
+function fmtFloat(x) {
+  if (x === null || x === undefined || isNaN(x)) return "";
+  const xf = Number(x);
+  if (!isFinite(xf)) return "";
+  if (Math.abs(xf) > 1e6 || (Math.abs(xf) < 1e-4 && xf !== 0)) {
+    return xf.toExponential(6);
+  }
+  return xf.toFixed(6);
+}
+
+/* ===================== Lectura CSV ===================== */
+
+function loadCsvFromInput() {
+  const input = document.getElementById("csvFileInput");
+  if (!input.files || input.files.length === 0) {
+    showMessage("error", "❌ No se seleccionó ningún archivo.");
+    return;
+  }
+  const file = input.files[0];
+  Papa.parse(file, {
+    header: true,
+    dynamicTyping: false,
+    skipEmptyLines: true,
+    complete: function(results) {
+      if (!results.data || results.data.length === 0) {
+        showMessage("error", "❌ El CSV está vacío o no se pudo parsear.");
+        return;
+      }
+      let cols = results.meta.fields || [];
+      const {columns: deduped, renamed} = dedupeColumns(cols);
+      // Renombrar columnas en los objetos
+      const data = results.data.map(row => {
+        const obj = {};
+        deduped.forEach((colName, idx) => {
+          const originalName = cols[idx];
+          obj[colName] = row[originalName];
+        });
+        return obj;
+      });
+
+      dfOriginal = JSON.parse(JSON.stringify(data));
+      dfWork = JSON.parse(JSON.stringify(data));
+      columns = deduped;
+      fileName = file.name || "dataset.csv";
+
+      showMessage("ok",
+        `✅ CSV cargado: <b>${fileName}</b><br>` +
+        `Filas: <b>${dfWork.length}</b> · Columnas: <b>${columns.length}</b>` +
+        (renamed.length ? "<br>Columnas duplicadas renombradas:<br>" + 
+          renamed.map(([a,b])=>`<code>${a}</code> → <code>${b}</code>`).join("<br>") : "")
+      );
+      updateCurrentFileInfo();
+      refreshAllUi();
+    },
+    error: function(err) {
+      showMessage("error", "❌ Error al parsear el CSV: " + err.message);
+    }
+  });
+}
+
+/* ===================== UI: rellenar selects ===================== */
+
+function refreshAllUi() {
+  const hasData = !!dfWork && dfWork.length > 0 && columns.length > 0;
+  document.getElementById("card-chart").style.display  = hasData ? "" : "none";
+  document.getElementById("card-stats").style.display  = hasData ? "" : "none";
+  document.getElementById("card-stack").style.display  = hasData ? "" : "none";
+  document.getElementById("card-split").style.display  = hasData ? "" : "none";
+  document.getElementById("card-export").style.display = hasData ? "" : "none";
+
+  if (!hasData) return;
+
+  const xSelect = document.getElementById("xSelect");
+  const ySelect = document.getElementById("ySelect");
+  const groupSelect = document.getElementById("groupSelect");
+  const statsColSelect = document.getElementById("statsColSelect");
+  const stackIdVars = document.getElementById("stackIdVars");
+  const stackValueVars = document.getElementById("stackValueVars");
+  const splitBaseCol = document.getElementById("splitBaseCol");
+  const splitViewCol = document.getElementById("splitViewCol");
+
+  const selects = [xSelect, ySelect, groupSelect, statsColSelect, stackIdVars, stackValueVars, splitBaseCol, splitViewCol];
+
+  for (let sel of selects) {
+    sel.innerHTML = "";
+  }
+
+  columns.forEach(col => {
+    const opt1 = new Option(col, col);
+    const opt2 = new Option(col, col);
+    const opt3 = new Option(col, col);
+    const opt4 = new Option(col, col);
+    const opt5 = new Option(col, col);
+    const opt6 = new Option(col, col);
+    const opt7 = new Option(col, col);
+    const opt8 = new Option(col, col);
+
+    xSelect.add(opt1);
+    ySelect.add(opt2);
+    groupSelect.add(opt3);
+    statsColSelect.add(opt4);
+    stackIdVars.add(opt5);
+    stackValueVars.add(opt6);
+    splitBaseCol.add(opt7);
+    splitViewCol.add(opt8);
+  });
+
+  // valores por defecto
+  if (columns.length > 0) {
+    xSelect.value = columns[0];
+    statsColSelect.value = columns[0];
+    splitBaseCol.value = columns[0];
+    splitViewCol.value = "";
+  }
+
+  const numericCols = columns.filter(c=>{
+    // heurística: intentar convertir valores al menos en la mitad de filas
+    const vals = dfWork.map(r => r[c]).filter(v=>v!==null && v!==undefined && v!=="");
+    if (vals.length === 0) return false;
+    const numericArr = vals.map(v=>{
+      const x = parseFloat(v);
+      return isNaN(x) ? NaN : x;
+    });
+    const valid = numericArr.filter(x=>!isNaN(x));
+    return valid.length >= 0.6*numericArr.length;
+  });
+
+  if (numericCols.length > 0) {
+    // seleccionar hasta 3 Y
+    for (let i=0; i<numericCols.length && i<3; i++) {
+      const col = numericCols[i];
+      for (let opt of ySelect.options) {
+        if (opt.value === col) {
+          opt.selected = true;
+          break;
+        }
+      }
+    }
+  } else {
+    // si no hay numéricas, la primera
+    if (ySelect.options.length > 0) {
+      ySelect.options[0].selected = true;
+    }
+  }
+
+  renderDfPreview();
+}
+
+/* ===================== AGREGADO (tipo aggregate_long) ===================== */
+
+function groupByKeys(data, keys) {
+  const groups = new Map();
+  for (let row of data) {
+    const keyParts = keys.map(k => (row[k]===undefined ? "" : String(row[k])));
+    const keyStr = keyParts.join("||");
+    if (!groups.has(keyStr)) {
+      groups.set(keyStr, {keyParts, rows: []});
+    }
+    groups.get(keyStr).rows.push(row);
+  }
+  return Array.from(groups.values());
+}
+
+function aggregateLong(data, x, yList, groupers, aggFunc) {
+  if (!data || data.length === 0 || !x || !yList || yList.length === 0) {
+    return [];
+  }
+  const keys = [x, ...(groupers || [])];
+  const groups = (aggFunc === "none") ? null : groupByKeys(data, keys);
+  const result = [];
+
+  if (aggFunc === "none") {
+    for (let row of data) {
+      for (let y of yList) {
+        const v = row[y];
+        if (v === null || v === undefined || v === "") continue;
+        result.push({
+          x: row[x],
+          series: y,
+          grp: groupers && groupers.length
+              ? groupers.map(g => row[g]===undefined?"":String(row[g])).join(" | ")
+              : "",
+          value: parseFloat(v)
+        });
+      }
+    }
+    return result;
+  }
+
+  // funciones para numeric + count
+  const numericAgg = (vals, how) => {
+    const arr = vals.map(v=>{
+      const x = parseFloat(v);
+      return isNaN(x) ? NaN : x;
+    }).filter(x=>!isNaN(x));
+    if (arr.length === 0) return null;
+    if (how === "sum") return arr.reduce((a,b)=>a+b,0);
+    if (how === "min") return Math.min(...arr);
+    if (how === "max") return Math.max(...arr);
+    if (how === "mean") return arr.reduce((a,b)=>a+b,0)/arr.length;
+    if (how === "median") {
+      arr.sort((a,b)=>a-b);
+      const m = arr.length;
+      const mid = Math.floor((m-1)/2);
+      if (m%2===1) return arr[mid];
+      return (arr[mid] + arr[mid+1])/2;
+    }
+    return null;
+  };
+
+  for (let g of groups) {
+    const [xVal, ...grpVals] = g.keyParts;
+    for (let y of yList) {
+      const colVals = g.rows.map(r=>r[y]).filter(v=>v!==null && v!==undefined && v!=="");
+      if (colVals.length === 0) continue;
+
+      let val = null;
+      if (aggFunc === "count") {
+        val = colVals.length;
+      } else {
+        val = numericAgg(colVals, aggFunc);
+      }
+      if (val === null) continue;
+      result.push({
+        x: xVal,
+        series: y,
+        grp: (groupers && groupers.length ? grpVals.join(" | ") : ""),
+        value: val
+      });
+    }
+  }
+  return result;
+}
+
+/* ===================== CHART ===================== */
+
+function getSelectedOptions(select) {
+  return Array.from(select.options)
+              .filter(o=>o.selected)
+              .map(o=>o.value);
+}
+
+function buildMainChart() {
+  if (!dfWork || dfWork.length === 0 || columns.length === 0) return;
+
+  const xCol = document.getElementById("xSelect").value;
+  const yCols = getSelectedOptions(document.getElementById("ySelect"));
+  const groupCols = getSelectedOptions(document.getElementById("groupSelect"));
+  const kind = document.getElementById("kindSelect").value; // line/bar
+  const agg = document.getElementById("aggSelect").value;
+  const scale = document.getElementById("scaleSelect").value; // linear/logarithmic
+  const size = Math.max(1, Math.min(40, parseInt(document.getElementById("sizeInput").value || "3",10)));
+  const fontSize = Math.max(8, Math.min(28, parseInt(document.getElementById("fontInput").value || "12",10)));
+  const showLabels = document.getElementById("labelsCheckbox").checked;
+  const theme = document.getElementById("themeSelect").value; // dark/light
+
+  const notices = [];
+  if (!columns.includes(xCol)) {
+    notices.push("⚠️ La X seleccionada no existe en df_work.");
+  }
+  const missingYs = yCols.filter(c => !columns.includes(c));
+  if (missingYs.length) {
+    notices.push("⚠️ Columnas Y no halladas (ignoradas): " + missingYs.join(", "));
+  }
+  const validYs = yCols.filter(c => columns.includes(c));
+  if (!validYs.length) {
+    notices.push("⚠️ No hay Ys válidas; se intentará usar columnas numéricas por defecto.");
+  }
+
+  const numericCols = columns.filter(c=>{
+    const vals = dfWork.map(r => r[c]).filter(v=>v!==null && v!==undefined && v!=="");
+    if (vals.length === 0) return false;
+    const numericArr = vals.map(v=>{
+      const x = parseFloat(v);
+      return isNaN(x) ? NaN : x;
+    });
+    const valid = numericArr.filter(x=>!isNaN(x));
+    return valid.length >= 0.6*numericArr.length;
+  });
+
+  let finalX = columns.includes(xCol) ? xCol : (columns[0] || null);
+  let finalYs = validYs.length ? validYs
+                   : (numericCols.length ? numericCols.slice(0,3)
+                      : (columns.length>1 ? [columns[1]] : []));
+
+  if (!finalX || finalYs.length === 0) {
+    const nArea = document.getElementById("chartNotices");
+    nArea.style.display = "block";
+    nArea.innerHTML = "<ul><li>⚠️ No es posible construir gráfico: falta X o Y.</li></ul>";
+    return;
+  }
+
+  const longData = aggregateLong(dfWork, finalX, finalYs, groupCols, agg);
+  const notices2 = [];
+  if (agg === "logarithmic") {
+    // nothing
+  }
+  if (longData.length === 0) {
+    notices2.push("⚠️ Después del agregado no hay datos para graficar.");
+  }
+
+  const nArea = document.getElementById("chartNotices");
+  if (notices.length || notices2.length) {
+    nArea.style.display = "block";
+    const all = notices.concat(notices2);
+    nArea.innerHTML = "<ul>" + all.map(n=>`<li>${n}</li>`).join("") + "</ul>";
+  } else {
+    nArea.style.display = "none";
+    nArea.innerHTML = "";
+  }
+
+  if (!longData.length) {
+    // solo limpiar chart
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    return;
+  }
+
+  // Construir x_cat
+  const xCats = [];
+  for (let row of longData) {
+    const grpLabel = row.grp ? row.grp : "";
+    const label = groupCols.length ? String(row.x) + " | " + (grpLabel || "(sin grupo)") : String(row.x);
+    row.x_cat = label;
+    if (!xCats.includes(label)) xCats.push(label);
+  }
+
+  // series: names
+  const seriesNames = Array.from(new Set(longData.map(r=>r.series)));
+  // color map
+  const palette = [
+    "#22d3ee","#22c55e","#f97316","#ef4444","#a855f7",
+    "#38bdf8","#4ade80","#facc15","#fb7185","#6366f1",
+    "#14b8a6","#f59e0b","#e11d48","#84cc16","#0ea5e9",
+  ];
+  const getColor = (idx) => palette[idx % palette.length];
+
+  // data por serie
+  const datasets = [];
+  for (let i=0; i<seriesNames.length; i++) {
+    const sName = seriesNames[i];
+    const color = getColor(i);
+    const dataArr = xCats.map(label=>{
+      const row = longData.find(r=>r.x_cat===label && r.series===sName);
+      if (!row) return null;
+      const v = parseFloat(row.value);
+      if (scale === "logarithmic" && v <= 0) {
+        return null;
+      }
+      return v;
+    });
+
+    const ds = {
+      label: sName,
+      data: dataArr,
+      borderColor: color,
+      backgroundColor: color+"88",
+      spanGaps: true,
+      hidden: false,
+    };
+    if (kind === "line") {
+      ds.type = "line";
+      ds.tension = 0;
+      ds.borderWidth = size;
+      ds.pointRadius = Math.min(12, size+2);
+    } else {
+      ds.type = "bar";
+      ds.borderWidth = 1;
+    }
+    datasets.push(ds);
+  }
+
+  // Chart.js config
+  const ctx = document.getElementById("mainChart").getContext("2d");
+  if (chart) {
+    chart.destroy();
+  }
+
+  const isDark = theme === "dark";
+  const gridColor = isDark ? "rgba(148,163,184,0.25)" : "rgba(148,163,184,0.4)";
+  const labelColor = isDark ? "#e5e7eb" : "#1f2937";
+  const bgColor = isDark ? "#020617" : "#ffffff";
+
+  chart = new Chart(ctx, {
+    type: kind,
+    data: {
+      labels: xCats,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      backgroundColor: bgColor,
+      plugins: {
+        legend: {
+          labels: {
+            color: labelColor,
+            font: {size: fontSize-2}
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const v = ctx.raw;
+              if (v === null) return `${ctx.dataset.label}: (no válido)`;
+              return `${ctx.dataset.label}: ${v}`;
+            }
+          }
+        },
+        datalabels: showLabels ? {
+          // Si quisieras usar chartjs-plugin-datalabels, aquí se integraría
+        } : {}
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: labelColor,
+            font: {size: fontSize-2}
+          },
+          grid: {
+            color: gridColor
+          }
+        },
+        y: {
+          type: scale,
+          ticks: {
+            color: labelColor,
+            font: {size: fontSize-2}
+          },
+          grid: {
+            color: gridColor
+          },
+          min: scale === "logarithmic" ? undefined : undefined
+        }
+      }
+    }
+  });
+}
+
+/* ===================== Estadística: render ===================== */
+
+function renderStats() {
+  if (!dfWork || dfWork.length === 0 || columns.length === 0) return;
+  const col = document.getElementById("statsColSelect").value;
+  if (!col) return;
+
+  const values = dfWork.map(r=>r[col]);
+  const stats = basicStats(values);
+
+  const container = document.getElementById("statsTableContainer");
+  const chartsContainer = document.getElementById("statsChartsContainer");
+  container.innerHTML = "";
+  chartsContainer.innerHTML = "";
+
+  if (stats.type === "numeric") {
+    const rows = [
+      ["Columna", col],
+      ["Tipo", "numérica"],
+      ["count (filas)", stats.count],
+      ["faltantes", stats.missing],
+      ["unique", stats.unique],
+      ["n válidos numéricos", stats.nValid],
+      ["mean", fmtFloat(stats.mean)],
+      ["std", fmtFloat(stats.std)],
+      ["se (error estándar)", fmtFloat(stats.se)],
+      ["IC95% low", fmtFloat(stats.ciLow)],
+      ["IC95% high", fmtFloat(stats.ciHigh)],
+      ["min", fmtFloat(stats.min)],
+      ["p25", fmtFloat(stats.p25)],
+      ["p50 (mediana)", fmtFloat(stats.p50)],
+      ["p75", fmtFloat(stats.p75)],
+      ["IQR", fmtFloat(stats.iqr)],
+      ["max", fmtFloat(stats.max)]
+    ];
+    let html = "<table class='table-light'><tbody>";
+    for (let [k,v] of rows) {
+      html += `<tr><td><b>${k}</b></td><td>${v}</td></tr>`;
+    }
+    html += "</tbody></table>";
+    container.innerHTML = html;
+
+    if (stats.values.length) {
+      const histId = "statsHist";
+      const boxId = "statsBox";
+      const ecdfId = "statsEcdf";
+      chartsContainer.innerHTML =
+        `<div style="margin-top:8px;">
+           <canvas id="${histId}" height="200"></canvas>
+         </div>
+         <div style="margin-top:8px;">
+           <canvas id="${ecdfId}" height="200"></canvas>
+         </div>`;
+
+      // Histograma
+      const dataArr = stats.values.slice().sort((a,b)=>a-b);
+      const n = dataArr.length;
+      const bins = Math.max(10, Math.min(50, Math.floor(n/2)+1));
+      const min = dataArr[0];
+      const max = dataArr[n-1];
+      const binWidth = (max-min)/bins || 1;
+      const edges = [];
+      for (let i=0;i<=bins;i++){
+        edges.push(min + i*binWidth);
+      }
+      const counts = new Array(bins).fill(0);
+      for (let v of dataArr) {
+        let idx = Math.floor((v-min)/binWidth);
+        if (idx >= bins) idx = bins-1;
+        if (idx < 0) idx = 0;
+        counts[idx]++;
+      }
+      const centers = [];
+      for (let i=0;i<bins;i++){
+        centers.push((edges[i]+edges[i+1])/2);
+      }
+
+      const ctxH = document.getElementById(histId).getContext("2d");
+      new Chart(ctxH, {
+        type:"bar",
+        data:{
+          labels: centers.map(x=>fmtFloat(x)),
+          datasets:[{
+            label: "Frecuencia",
+            data: counts,
+            backgroundColor:"#22d3ee88",
+            borderColor:"#22d3ee",
+            borderWidth:1
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{title:{display:true,text:col}},
+            y:{title:{display:true,text:"Frecuencia"}}
+          }
+        }
+      });
+
+      // ECDF
+      const ctxE = document.getElementById(ecdfId).getContext("2d");
+      const xECDF = dataArr;
+      const yECDF = xECDF.map((_,i)=>(i+1)/n);
+      new Chart(ctxE, {
+        type:"line",
+        data:{
+          labels:xECDF.map(v=>fmtFloat(v)),
+          datasets:[{
+            label:"ECDF",
+            data:yECDF,
+            borderColor:"#22c55e",
+            pointRadius:0
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{title:{display:true,text:col}},
+            y:{title:{display:true,text:"Probabilidad acumulada"},min:0,max:1}
+          }
+        }
+      });
+    }
+
+  } else if (stats.type === "datetime") {
+    let html = "<table class='table-light'><tbody>";
+    html += `<tr><td><b>Columna</b></td><td>${col}</td></tr>`;
+    html += `<tr><td><b>Tipo</b></td><td>datetime</td></tr>`;
+    html += `<tr><td><b>count (filas)</b></td><td>${stats.count}</td></tr>`;
+    html += `<tr><td><b>faltantes</b></td><td>${stats.missing}</td></tr>`;
+    html += `<tr><td><b>unique</b></td><td>${stats.unique}</td></tr>`;
+    html += `<tr><td><b>min</b></td><td>${stats.min ? stats.min.toISOString() : ""}</td></tr>`;
+    html += `<tr><td><b>max</b></td><td>${stats.max ? stats.max.toISOString() : ""}</td></tr>`;
+    html += "</tbody></table>";
+    container.innerHTML = html;
+    chartsContainer.innerHTML = "<i>Para datetime podrías añadir gráficos temporales adicionales si lo deseas.</i>";
+
+  } else {
+    // categórica
+    let html = "<table class='table-light'><tbody>";
+    html += `<tr><td><b>Columna</b></td><td>${col}</td></tr>`;
+    html += `<tr><td><b>Tipo</b></td><td>categórica</td></tr>`;
+    html += `<tr><td><b>count (filas)</b></td><td>${stats.count}</td></tr>`;
+    html += `<tr><td><b>faltantes</b></td><td>${stats.missing}</td></tr>`;
+    html += `<tr><td><b>unique</b></td><td>${stats.unique}</td></tr>`;
+    html += `<tr><td><b>top</b></td><td>${stats.top}</td></tr>`;
+    html += `<tr><td><b>freq</b></td><td>${stats.freq}</td></tr>`;
+    html += "</tbody></table>";
+    container.innerHTML = html;
+
+    if (stats.counts && stats.counts.length) {
+      const top20 = stats.counts.slice(0,20);
+      const labels = top20.map(([k,_])=>k);
+      const values = top20.map(([_,v])=>v);
+      const chartId = "catBarChart";
+      chartsContainer.innerHTML =
+        `<div style="margin-top:8px;">
+           <canvas id="${chartId}" height="220"></canvas>
+         </div>`;
+      const ctxC = document.getElementById(chartId).getContext("2d");
+      new Chart(ctxC,{
+        type:"bar",
+        data:{
+          labels:labels,
+          datasets:[{
+            label:"Frecuencia",
+            data:values,
+            backgroundColor:"#22d3ee88",
+            borderColor:"#22d3ee",
+            borderWidth:1
+          }]
+        },
+        options:{
+          indexAxis:"y",
+          responsive:true,
+          maintainAspectRatio:false,
+          scales:{
+            x:{title:{display:true,text:"Frecuencia"}},
+            y:{title:{display:false}}
+          }
+        }
+      });
+    }
+  }
+}
+
+/* ===================== STACK (MELT) ===================== */
+
+function doStack() {
+  if (!dfWork || dfWork.length===0 || columns.length===0) return;
+  const idVars = getSelectedOptions(document.getElementById("stackIdVars"));
+  const valueVarsRaw = getSelectedOptions(document.getElementById("stackValueVars"));
+  const varName = document.getElementById("stackVarName").value.trim() || "variable";
+  const valueName = document.getElementById("stackValueName").value.trim() || "value";
+  const dropNa = document.getElementById("stackDropnaCheckbox").checked;
+  const stackResult = document.getElementById("stackResult");
+
+  let valueVars = valueVarsRaw;
+  if (!valueVars.length) {
+    valueVars = columns.filter(c => !idVars.includes(c));
+  }
+  if (!valueVars.length) {
+    stackResult.innerHTML =
+      `<div class="alert alert-error">❌ No hay columnas para apilar. Selecciona <code>value_vars</code> o deja vacío para usar todas menos id_vars.</div>`;
+    return;
+  }
+
+  const newData = [];
+  for (let row of dfWork) {
+    for (let vcol of valueVars) {
+      const val = row[vcol];
+      if (dropNa && (val===null || val===undefined || val==="")) continue;
+      const newRow = {};
+      idVars.forEach(idCol=>{
+        newRow[idCol] = row[idCol];
+      });
+      newRow[varName] = vcol;
+      newRow[valueName] = val;
+      newData.push(newRow);
+    }
+  }
+
+  dfWork = newData;
+  columns = dfWork.length ? Object.keys(dfWork[0]) : [];
+  stackResult.innerHTML =
+    `<div class="alert alert-ok">✅ <b>STACK generado.</b> Dimensiones: <b>${dfWork.length} filas</b> × <b>${columns.length} columnas</b></div>` +
+    `<div style="margin-top:6px;">Primeras 10 filas del CSV cambiado:</div>` +
+    `<div style="margin-top:4px; max-height:260px; overflow:auto;">${dfToHtmlPreview(dfWork,10)}</div>`;
+
+  refreshAllUi();
+}
+
+/* ===================== SPLIT ===================== */
+
+function doSplit() {
+  if (!dfWork || dfWork.length===0 || columns.length===0) return;
+  const baseCol = document.getElementById("splitBaseCol").value;
+  const viewCol = document.getElementById("splitViewCol").value || null;
+  const status = document.getElementById("splitStatus");
+  const preview = document.getElementById("splitPreview");
+
+  if (!baseCol || !columns.includes(baseCol)) {
+    status.innerHTML = `<div class="alert alert-error">❌ La columna base '${baseCol}' no existe en df_work.</div>`;
+    preview.innerHTML = "";
+    return;
+  }
+
+  // contar grupos
+  const groupsSet = new Set();
+  for (let row of dfWork) {
+    const v = row[baseCol];
+    groupsSet.add(v===undefined ? "" : String(v));
+  }
+  const nGroups = groupsSet.size;
+  status.innerHTML = `<div class="alert alert-info">ℹ️ Detectados <b>${nGroups}</b> grupos por '<code>${baseCol}</code>'. (No se aplica filtro)</div>`;
+
+  // vista previa
+  let colsToShow;
+  if (viewCol && columns.includes(viewCol)) {
+    colsToShow = [baseCol, viewCol];
+  } else {
+    colsToShow = columns.slice();
+  }
+  const dataPreview = dfWork.map(r=>{
+    const obj={};
+    colsToShow.forEach(c=>{obj[c]=r[c];});
+    return obj;
+  });
+  preview.innerHTML =
+    `<div style="margin-top:6px;">Primeras 10 filas — tabla completa:</div>` +
+    `<div style="margin-top:4px; max-height:260px; overflow:auto;">${dfToHtmlPreview(dataPreview,10)}</div>`;
+}
+
+/* ===================== EXPORT / RESET ===================== */
+
+function renderDfPreview() {
+  const dfPreview = document.getElementById("dfPreview");
+  if (!dfWork || dfWork.length===0) {
+    dfPreview.innerHTML = "<i>df_work vacío.</i>";
+    return;
+  }
+  dfPreview.innerHTML =
+    `<div><b>Vista del df_work actual</b> — Filas: ${dfWork.length} | Columnas: ${columns.length}</div>` +
+    `<div style="margin-top:4px; max-height:260px; overflow:auto;">${dfToHtmlPreview(dfWork,10)}</div>`;
+}
+
+function exportCsv() {
+  if (!dfWork || dfWork.length===0) return;
+  const filenameInput = document.getElementById("exportFilename");
+  let fname = filenameInput.value.trim() || "df_work_final.csv";
+  fname = sanitizeFilename(fname);
+  if (!fname.toLowerCase().endsWith(".csv")) {
+    fname += ".csv";
+  }
+  const csv = Papa.unparse(dfWork);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const exportInfo = document.getElementById("exportInfo");
+  exportInfo.innerHTML = `<div class="alert alert-ok">✅ Archivo generado: <code>${fname}</code>. Revisa tus descargas.</div>`;
+}
+
+function resetBase() {
+  if (!dfOriginal) return;
+  dfWork = JSON.parse(JSON.stringify(dfOriginal));
+  columns = dfWork.length ? Object.keys(dfWork[0]) : [];
+  showMessage("info", "🔁 df_work volvió al CSV original cargado al inicio.");
+  updateCurrentFileInfo();
+  refreshAllUi();
+}
+
+/* ===================== EVENTOS ===================== */
+
+document.getElementById("btnLoadCsv").addEventListener("click", loadCsvFromInput);
+document.getElementById("btnUpdateChart").addEventListener("click", buildMainChart);
+document.getElementById("btnStats").addEventListener("click", renderStats);
+document.getElementById("btnStack").addEventListener("click", doStack);
+document.getElementById("btnSplit").addEventListener("click", doSplit);
+document.getElementById("btnExport").addEventListener("click", exportCsv);
+document.getElementById("btnResetBase").addEventListener("click", resetBase);
+</script>
+</body>
+</html>
