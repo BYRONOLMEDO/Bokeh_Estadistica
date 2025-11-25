@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CSV Dashboard — Gráfico + Estadística + Stack + Split</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- PapaParse para CSV -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+  :root{
+    --bg:#020617;
+    --card:#020617;
+    --card2:#020617;
+    --border:#1e293b;
+    --muted:#94a3b8;
+    --text:#e5e7eb;
+    --accent:#22d3ee;
+    --accent-soft:rgba(34,211,238,0.15);
+    --danger:#ef4444;
+    --ok:#22c55e;
+    --warning:#facc15;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:radial-gradient(circle at top,#1e293b 0,#020617 45%,#000 100%);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  .container{
+    max-width:1200px;
+    margin:0 auto;
+    padding:16px;
+  }
+  h1{
+    font-size:1.6rem;
+    margin:0 0 8px 0;
+  }
+  h2{
+    font-size:1.25rem;
+    margin:16px 0 8px 0;
+  }
+  h3{
+    font-size:1.05rem;
+    margin:12px 0 6px 0;
+  }
+  .card{
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    margin:10px 0;
+    background:
+      radial-gradient(circle at top left,rgba(34,211,238,0.1),transparent 55%),
+      radial-gradient(circle at bottom right,rgba(56,189,248,0.1),transparent 55%),
+      var(--card);
+    box-shadow:0 18px 45px rgba(15,23,42,0.75);
+  }
+  .subcard{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px 10px;
+    margin-top:8px;
+    background:rgba(15,23,42,0.85);
+  }
+  label{
+    font-size:0.86rem;
+    color:var(--muted);
+    display:inline-block;
+    margin-bottom:2px;
+  }
+  select, input[type="text"], input[type="file"]{
+    background:#020617;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:5px 7px;
+    font-size:0.9rem;
+    outline:none;
+  }
+  select:focus, input[type="text"]:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent-soft);
+  }
+  select[multiple]{
+    min-width:160px;
+  }
+  button{
+    border:none;
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:0.9rem;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-right:6px;
+    margin-top:4px;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#22d3ee,#0ea5e9);
+    color:#0f172a;
+  }
+  .btn-secondary{
+    background:#1e293b;
+    color:var(--text);
+  }
+  .btn-success{
+    background:linear-gradient(135deg,#22c55e,#16a34a);
+    color:#022c22;
+  }
+  .btn-warning{
+    background:linear-gradient(135deg,#facc15,#eab308);
+    color:#422006;
+  }
+  .btn-info{
+    background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+    color:#02131f;
+  }
+  .tag{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:0.75rem;
+    background:rgba(15,23,42,0.9);
+    border:1px solid rgba(148,163,184,0.5);
+    color:var(--muted);
+    margin-right:4px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:0.8rem;
+  }
+  th,td{
+    border:1px solid #1f2937;
+    padding:4px 6px;
+    text-align:left;
+  }
+  th{
+    background:rgba(15,23,42,0.95);
+    font-weight:600;
+  }
+  tr:nth-child(even) td{
+    background:rgba(15,23,42,0.75);
+  }
+  tr:nth-child(odd) td{
+    background:rgba(15,23,42,0.95);
+  }
+  .muted{color:var(--muted); font-size:0.8rem;}
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:3px 9px;
+    border-radius:999px;
+    background:rgba(15,23,42,0.9);
+    border:1px solid rgba(148,163,184,0.5);
+    font-size:0.75rem;
+    color:var(--muted);
+  }
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .row > div{
+    flex:1 1 200px;
+    min-width:0;
+  }
+  .small{font-size:0.78rem;}
+  canvas{
+    background:rgba(15,23,42,0.9);
+    border-radius:10px;
+    border:1px solid rgba(15,23,42,0.8);
+  }
+  /* 🔹 Nuevo: limitar ancho del gráfico, similar a Colab */
+  .chart-wrapper{
+    max-width:900px;      /* ancho máximo del gráfico */
+    margin:0 auto;        /* centrado */
+    height:260px;         /* alto visible del gráfico */
+  }
+  .chart-wrapper canvas{
+    width:100% !important;
+    height:100% !important;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 CSV Dashboard — HTML + JavaScript</h1>
+  <div class="muted">
+    Carga un <b>CSV</b>, explora el gráfico, estadísticas (modo JMP), <b>STACK</b> y <b>SPLIT</b>.
+  </div>
+
+  <!-- 1) CARGA CSV -->
+  <div class="card">
+    <h2>1️⃣ Cargar CSV</h2>
+    <div class="row">
+      <div>
+        <label for="file-input">Archivo .csv</label><br>
+        <input type="file" id="file-input" accept=".csv" />
+      </div>
+      <div>
+        <div class="pill" id="dataset-pill">Sin archivo</div>
+        <div id="dedupe-info" class="small"></div>
+      </div>
+    </div>
+    <div class="subcard">
+      <h3>Vista rápida — primeras 10 filas</h3>
+      <div id="preview-table"></div>
+    </div>
+  </div>
+
+  <!-- 2) GRÁFICO -->
+  <div class="card">
+    <h2>2️⃣ Gráfico (líneas / barras)</h2>
+    <div class="row">
+      <div>
+        <label for="chart-x">Columna X</label><br>
+        <select id="chart-x"></select>
+      </div>
+      <div>
+        <label for="chart-y">Columnas Y (puedes elegir varias)</label><br>
+        <select id="chart-y" multiple size="6"></select>
+      </div>
+      <div>
+        <label for="chart-type">Tipo</label><br>
+        <select id="chart-type">
+          <option value="line">Líneas</option>
+          <option value="bar">Barras</option>
+        </select>
+      </div>
+    </div>
+    <div class="subcard">
+      <div class="chart-wrapper">
+        <canvas id="chart-canvas"></canvas>
+      </div>
+      <div id="chart-msg" class="muted" style="margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <!-- 3) ESTADÍSTICA DE UNA COLUMNA -->
+  <div class="card">
+    <h2>3️⃣ Estadística básica — una columna (modo JMP)</h2>
+    <div class="row">
+      <div>
+        <label for="stats-column">Columna</label><br>
+        <select id="stats-column"></select>
+      </div>
+      <div class="muted" style="align-self:flex-end;">
+        Elige la columna para ver N, percentiles, CV%, skewness, kurtosis, etc.
+      </div>
+    </div>
+    <div class="subcard">
+      <div id="stats-table"></div>
+    </div>
+  </div>
+
+  <!-- 4) STACK -->
+  <div class="card">
+    <h2>4️⃣ STACK — Apilar columnas (reemplaza df_work)</h2>
+    <div class="row">
+      <div>
+        <label for="stack-idvars">id_vars (quedan fijas)</label><br>
+        <select id="stack-idvars" multiple size="6"></select>
+      </div>
+      <div>
+        <label for="stack-valuevars">value_vars (se apilan)</label><br>
+        <select id="stack-valuevars" multiple size="6"></select>
+      </div>
+      <div>
+        <label for="stack-varname">var_name</label><br>
+        <input type="text" id="stack-varname" value="variable"><br><br>
+        <label for="stack-valuename">value_name</label><br>
+        <input type="text" id="stack-valuename" value="value"><br><br>
+        <label><input type="checkbox" id="stack-dropna"> Eliminar filas con value NaN</label><br>
+        <button class="btn-primary" id="stack-btn">Generar STACK</button>
+      </div>
+    </div>
+    <div class="subcard">
+      <div id="stack-result"></div>
+    </div>
+  </div>
+
+  <!-- 5) SPLIT -->
+  <div class="card">
+    <h2>5️⃣ SPLIT — por valores (solo informa)</h2>
+    <div class="row">
+      <div>
+        <label for="split-base">Col. BASE</label><br>
+        <select id="split-base"></select>
+      </div>
+      <div>
+        <label for="split-show">Col. muestra (opcional)</label><br>
+        <select id="split-show"></select>
+      </div>
+      <div style="align-self:flex-end%;">
+        <button class="btn-secondary" id="split-btn">Hacer Split</button>
+      </div>
+    </div>
+    <div class="subcard">
+      <div id="split-status"></div>
+      <div style="margin-top:6px;" id="split-result"></div>
+    </div>
+  </div>
+
+  <!-- 6) EXPORTAR / VOLVER AL ORIGINAL -->
+  <div class="card">
+    <h2>6️⃣ Exportar / Volver al CSV original</h2>
+    <div class="row">
+      <div>
+        <label for="export-name">Nombre archivo CSV final</label><br>
+        <input type="text" id="export-name" value="resultado_final.csv" style="min-width:220px;">
+      </div>
+      <div style="align-self:flex-end;">
+        <button class="btn-success" id="export-btn">⬇️ Exportar CSV</button>
+        <button class="btn-warning" id="reset-btn">🔁 Volver al original</button>
+      </div>
+    </div>
+    <div class="subcard">
+      <div id="final-info" class="muted"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================= Estado global ======================= */
+let dfOriginal = null;   // {columns:[], rows:[{...},...]}
+let dfWork     = null;
+let baseFileName = "archivo";
+let currentChart = null;
+
+/* ======================= Utilidades generales ======================= */
+function deepCopy(obj){
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function sanitizeFilename(s){
+  return String(s || "archivo").trim().replace(/\s+/g,"_").replace(/[^A-Za-z0-9_\-.]/g,"").slice(0,80) || "archivo";
+}
+
+function escapeHTML(str){
+  return str.replace(/[&<>"']/g,function(m){
+    return ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    })[m];
+  });
+}
+
+function renderTable(data, maxRows=10){
+  if(!data || !data.columns || !data.columns.length){
+    return '<div class="muted">Sin datos para mostrar.</div>';
+  }
+  const cols = data.columns;
+  const rows = data.rows || [];
+  let html = "<div class='small'><table><thead><tr>";
+  cols.forEach(c => { html += "<th>"+escapeHTML(String(c))+"</th>"; });
+  html += "</tr></thead><tbody>";
+  const n = Math.min(maxRows, rows.length);
+  for(let i=0;i<n;i++){
+    html += "<tr>";
+    const row = rows[i];
+    cols.forEach(c => {
+      let v = row[c];
+      if(v === null || v === undefined) v = "";
+      html += "<td>"+escapeHTML(String(v))+"</td>";
+    });
+    html += "</tr>";
+  }
+  if(rows.length === 0){
+    html += "<tr><td colspan='"+cols.length+"' class='muted'>Sin filas.</td></tr>";
+  }
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function getSelectedValues(sel){
+  return Array.from(sel.selectedOptions || []).map(o => o.value);
+}
+
+/* ======================= Detección numérica ======================= */
+function isNumericColumn(data, col){
+  if(!data || !data.rows) return false;
+  let nonNull = 0;
+  let numeric = 0;
+  const rows = data.rows;
+  const maxCheck = Math.min(200, rows.length);
+  for(let i=0;i<maxCheck;i++){
+    let v = rows[i][col];
+    if(v === null || v === undefined || v === "") continue;
+    nonNull++;
+    const x = Number(v);
+    if(!isNaN(x)) numeric++;
+  }
+  if(nonNull === 0) return false;
+  return (numeric / nonNull) >= 0.6;
+}
+
+function numericColumns(data){
+  if(!data) return [];
+  return (data.columns || []).filter(c => isNumericColumn(data,c));
+}
+
+/* ======================= Dedupe de columnas ======================= */
+function dedupeColumns(cols){
+  const seen = {};
+  const newCols = [];
+  const renamed = [];
+  cols.forEach(c => {
+    const s = String(c).trim();
+    if(!seen[s]){
+      seen[s] = 1;
+      newCols.push(s);
+    }else{
+      seen[s]++;
+      const newName = s + "_" + seen[s];
+      newCols.push(newName);
+      renamed.push({from:s, to:newName});
+    }
+  });
+  return {newCols, renamed};
+}
+
+/* ======================= CSV → carga ======================= */
+document.getElementById("file-input").addEventListener("change", function(ev){
+  const file = ev.target.files[0];
+  if(!file){
+    dfOriginal = dfWork = null;
+    document.getElementById("preview-table").innerHTML = "<div class='muted'>Sin archivo.</div>";
+    document.getElementById("dataset-pill").textContent = "Sin archivo";
+    return;
+  }
+  baseFileName = sanitizeFilename(file.name.replace(/\.csv$/i,"") || "archivo");
+  Papa.parse(file,{
+    header:true,
+    skipEmptyLines:"greedy",
+    dynamicTyping:false,
+    complete:function(results){
+      if(!results.data || !results.data.length){
+        alert("No se pudo leer el CSV (sin filas).");
+        return;
+      }
+      let cols = results.meta.fields || [];
+      const rowsRaw = results.data;
+
+      // Dedupe columnas
+      const {newCols, renamed} = dedupeColumns(cols);
+      cols = newCols;
+
+      // Normalizar filas
+      const rows = rowsRaw.map(r => {
+        const obj = {};
+        cols.forEach(c => { obj[c] = (r[c] !== undefined ? r[c] : ""); });
+        return obj;
+      });
+
+      dfOriginal = {columns:cols, rows:rows};
+      dfWork = deepCopy(dfOriginal);
+
+      // UI: info rápida
+      const pill = document.getElementById("dataset-pill");
+      pill.innerHTML = "📄 " + escapeHTML(file.name) +
+        " · Filas: " + rows.length + " · Columnas: " + cols.length;
+
+      const ddInfo = document.getElementById("dedupe-info");
+      if(renamed.length){
+        let msg = "⚠️ Columnas duplicadas renombradas:<br>";
+        renamed.forEach(r => {
+          msg += "• <code>"+escapeHTML(r.from)+"</code> → <code>"+escapeHTML(r.to)+"</code><br>";
+        });
+        ddInfo.innerHTML = msg;
+      }else{
+        ddInfo.innerHTML = "";
+      }
+
+      // Vista rápida
+      document.getElementById("preview-table").innerHTML = renderTable(dfWork,10);
+
+      // Refrescar todos los controles
+      refreshAllControls();
+      updateChart();
+      updateStats();
+      document.getElementById("final-info").innerHTML =
+        "df_work actual · Filas: <b>"+dfWork.rows.length+"</b> | Columnas: <b>"+dfWork.columns.length+"</b>";
+    },
+    error:function(err){
+      alert("Error al leer el CSV: " + err);
+    }
+  });
+});
+
+/* ======================= Refrescar controles ======================= */
+function refreshAllControls(){
+  if(!dfWork || !dfWork.columns || !dfWork.columns.length) return;
+  const cols = dfWork.columns;
+
+  // 1) Chart
+  const selX = document.getElementById("chart-x");
+  const selY = document.getElementById("chart-y");
+  selX.innerHTML = "";
+  selY.innerHTML = "";
+  cols.forEach(c => {
+    const opt1 = document.createElement("option");
+    opt1.value = c; opt1.textContent = c;
+    selX.appendChild(opt1);
+    const opt2 = document.createElement("option");
+    opt2.value = c; opt2.textContent = c;
+    selY.appendChild(opt2);
+  });
+  // Defaults
+  selX.value = cols[0];
+  const nums = numericColumns(dfWork);
+  const defaultYs = nums.length ? nums.slice(0,3) : cols.slice(0,1);
+  Array.from(selY.options).forEach(o => {
+    o.selected = defaultYs.includes(o.value);
+  });
+
+  // 2) Stats
+  const selStats = document.getElementById("stats-column");
+  selStats.innerHTML = "";
+  cols.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c; opt.textContent = c;
+    selStats.appendChild(opt);
+  });
+  selStats.value = cols[0];
+
+  // 3) Stack
+  const stackId = document.getElementById("stack-idvars");
+  const stackVal = document.getElementById("stack-valuevars");
+  stackId.innerHTML = "";
+  stackVal.innerHTML = "";
+  cols.forEach(c => {
+    const o1 = document.createElement("option");
+    o1.value = c; o1.textContent = c;
+    stackId.appendChild(o1);
+    const o2 = document.createElement("option");
+    o2.value = c; o2.textContent = c;
+    stackVal.appendChild(o2);
+  });
+
+  // 4) Split
+  const splitBase = document.getElementById("split-base");
+  const splitShow = document.getElementById("split-show");
+  splitBase.innerHTML = "";
+  splitShow.innerHTML = "";
+  cols.forEach(c => {
+    const op1 = document.createElement("option");
+    op1.value = c; op1.textContent = c;
+    splitBase.appendChild(op1);
+
+    const op2 = document.createElement("option");
+    op2.value = c; op2.textContent = c;
+    splitShow.appendChild(op2);
+  });
+  // Añadir opción "(ninguna)" al splitShow
+  const optNone = document.createElement("option");
+  optNone.value = "(ninguna)";
+  optNone.textContent = "(ninguna)";
+  splitShow.insertBefore(optNone, splitShow.firstChild);
+  splitBase.value = cols[0];
+  splitShow.value = "(ninguna)";
+}
+
+/* ======================= Gráfico (Chart.js) ======================= */
+function updateChart(){
+  const canvas = document.getElementById("chart-canvas");
+  const msg = document.getElementById("chart-msg");
+
+  if(!dfWork || !dfWork.columns || !dfWork.columns.length){
+    msg.textContent = "Carga un CSV para ver el gráfico.";
+    if(currentChart) { currentChart.destroy(); currentChart = null; }
+    return;
+  }
+
+  const xCol = document.getElementById("chart-x").value;
+  const yCols = getSelectedValues(document.getElementById("chart-y"));
+  const type  = document.getElementById("chart-type").value;
+
+  if(!xCol || !yCols.length){
+    msg.textContent = "Selecciona X y al menos una Y.";
+    if(currentChart) { currentChart.destroy(); currentChart = null; }
+    return;
+  }
+
+  const rows = dfWork.rows;
+  const labels = rows.map(r => String(r[xCol] ?? ""));
+
+  const datasets = [];
+  const palette = [
+    "#22d3ee","#a855f7","#f97316","#ec4899","#22c55e",
+    "#eab308","#0ea5e9","#facc15","#f97316","#38bdf8",
+    "#4ade80","#fda4af","#c4b5fd","#67e8f9"
+  ];
+
+  yCols.forEach((col, idx) => {
+    const data = rows.map(r => {
+      const v = r[col];
+      const x = Number(v);
+      return isNaN(x) ? null : x;
+    });
+    datasets.push({
+      label: col,
+      data: data,
+      borderColor: palette[idx % palette.length],
+      backgroundColor: palette[idx % palette.length],
+      tension: 0.2,
+      pointRadius: 2.5,
+      pointHitRadius: 6,
+      borderWidth: 2
+    });
+  });
+
+  const ctx = canvas.getContext("2d");
+  if(currentChart) currentChart.destroy();
+
+  currentChart = new Chart(ctx,{
+    type: type === "bar" ? "bar" : "line",
+    data:{
+      labels: labels,
+      datasets: datasets
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:"index", intersect:false},
+      plugins:{
+        legend:{
+          labels:{color:"#e5e7eb", font:{size:11}}
+        },
+        tooltip:{
+          callbacks:{
+            label:function(context){
+              const v = context.parsed.y;
+              if(v === null || v === undefined || isNaN(v)) return context.dataset.label+": (NaN)";
+              return context.dataset.label+": "+v;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{
+            color:"#94a3b8",
+            maxRotation:60,
+            minRotation:0
+          },
+          grid:{color:"rgba(148,163,184,0.15)"},
+          title:{display:true, text:xCol, color:"#e5e7eb", font:{size:12}}
+        },
+        y:{
+          ticks:{color:"#94a3b8"},
+          grid:{color:"rgba(148,163,184,0.15)"},
+          title:{display:true, text:"Valores", color:"#e5e7eb", font:{size:12}}
+        }
+      }
+    }
+  });
+
+  msg.textContent = "Gráfico generado a partir de df_work (todas las filas actuales).";
+}
+
+document.getElementById("chart-x").addEventListener("change", updateChart);
+document.getElementById("chart-y").addEventListener("change", updateChart);
+document.getElementById("chart-type").addEventListener("change", updateChart);
+
+/* ======================= Estadística de una columna (modo JMP extendido) ======================= */
+function computeStats(data, col){
+  const rows = data.rows || [];
+  const total = rows.length;
+  let missing = 0;
+  const values = [];
+
+  for(const r of rows){
+    let v = r[col];
+    if(v === null || v === undefined || v === ""){
+      missing++;
+    }else{
+      values.push(v);
+    }
+  }
+
+  // Cálculo de únicos (solo no-nulos)
+  const uniqueValues = new Set(values.map(v => String(v))).size;
+
+  // Intentar numérica
+  const nums = [];
+  let numericCount = 0;
+  for(const v of values){
+    const x = Number(v);
+    if(!isNaN(x)){
+      numericCount++;
+      nums.push(x);
+    }
+  }
+  const numericRatio = values.length ? numericCount/values.length : 0;
+
+  if(numericRatio >= 0.6 && nums.length){
+    // ======= NUMÉRICA (modo JMP-like) =======
+    nums.sort((a,b)=>a-b);
+    const n = nums.length;
+
+    // Suma
+    const sum = nums.reduce((a,b)=>a+b,0);
+
+    // Media
+    const mean = sum / n;
+
+    // Varianza y std (muestral)
+    let varAcc = 0;
+    for(const x of nums){
+      varAcc += (x-mean)*(x-mean);
+    }
+    const variance = n>1 ? varAcc/(n-1) : 0;
+    const std = Math.sqrt(variance);
+
+    // Error estándar
+    const se = (n>1 && std>0) ? std/Math.sqrt(n) : null;
+
+    // IC 95% Mean (aprox.)
+    const t = 1.96;
+    const ciLow  = (se !== null) ? mean - t*se : null;
+    const ciHigh = (se !== null) ? mean + t*se : null;
+
+    // Mín/Máx/Rango
+    const min = nums[0];
+    const max = nums[n-1];
+    const range = max - min;
+
+    // Percentiles
+    const p01 = percentile(nums, 1);
+    const p05 = percentile(nums, 5);
+    const p10 = percentile(nums,10);
+    const p25 = percentile(nums,25);
+    const p50 = percentile(nums,50);
+    const p75 = percentile(nums,75);
+    const p90 = percentile(nums,90);
+    const p95 = percentile(nums,95);
+    const p99 = percentile(nums,99);
+    const iqr = p75 - p25;
+
+    // Coeficiente de variación
+    const cv = (mean !== 0) ? (std/mean)*100 : null;
+
+    // Skewness & Kurtosis
+    let m3 = 0, m4 = 0;
+    for(const x of nums){
+      const z = x - mean;
+      m3 += z*z*z;
+      m4 += z*z*z*z;
+    }
+    const denom3 = (n>1) ? ((n-1) * Math.pow(std,3)) : null;
+    const denom4 = (n>1) ? ((n-1) * Math.pow(std,4)) : null;
+    const skewness = (denom3 && denom3 !== 0) ? (m3/denom3) : null;
+    const kurtRaw  = (denom4 && denom4 !== 0) ? (m4/denom4) : null;
+    const kurtosis = (kurtRaw !== null) ? (kurtRaw - 3) : null;
+
+    return {
+      type:"numeric",
+      total,
+      missing,
+      unique:uniqueValues,
+      nValid:n,
+      sum,
+      mean,
+      variance,
+      std,
+      se,
+      ciLow,
+      ciHigh,
+      min,
+      max,
+      range,
+      p01,p05,p10,p25,p50,p75,p90,p95,p99,
+      iqr,
+      cv,
+      skewness,
+      kurtosis
+    };
+  }
+
+  // ======= CATEGÓRICA =======
+  const counts = {};
+  values.forEach(v => {
+    const s = String(v);
+    counts[s] = (counts[s] || 0) + 1;
+  });
+  let topValue = "";
+  let topFreq = 0;
+  Object.entries(counts).forEach(([k,v])=>{
+    if(v>topFreq){topFreq=v;topValue=k;}
+  });
+
+  // Ordenar categorías por frecuencia
+  const catArray = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+
+  return {
+    type:"categorical",
+    total,
+    missing,
+    unique:uniqueValues,
+    top:topValue,
+    freq:topFreq,
+    counts:counts,
+    catArray:catArray
+  };
+}
+
+function percentile(arr,p){
+  if(!arr.length) return null;
+  const pos = (p/100)*(arr.length-1);
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if(arr[base+1] !== undefined){
+    return arr[base] + rest*(arr[base+1]-arr[base]);
+  }else{
+    return arr[base];
+  }
+}
+
+function fmtFloat(x, decimals=6){
+  if(x === null || x === undefined || isNaN(x)) return "";
+  const xf = Number(x);
+  if(!isFinite(xf)) return "";
+  if(Math.abs(xf) > 1e6 || (Math.abs(xf) < 1e-4 && xf !== 0)){
+    return xf.toExponential(decimals);
+  }
+  return xf.toFixed(decimals);
+}
+
+function updateStats(){
+  const sel = document.getElementById("stats-column");
+  const col = sel.value;
+  const cont = document.getElementById("stats-table");
+  if(!dfWork || !col){
+    cont.innerHTML = "<div class='muted'>Carga un CSV y elige una columna.</div>";
+    return;
+  }
+  const st = computeStats(dfWork,col);
+  let html = "<div class='small'><table>";
+
+  if(st.type === "numeric"){
+    const rows = [
+      ["Columna", col],
+      ["Tipo", "numérica"],
+      ["N (filas totales)", st.total],
+      ["Missing", st.missing],
+      ["Non-missing", st.total - st.missing],
+      ["Unique (no nulos)", st.unique],
+      ["N válidos numéricos", st.nValid],
+      ["Sum", fmtFloat(st.sum,6)],
+      ["Mean", fmtFloat(st.mean,6)],
+      ["Variance", fmtFloat(st.variance,6)],
+      ["Std Dev", fmtFloat(st.std,6)],
+      ["Std Error of Mean", fmtFloat(st.se,6)],
+      ["IC95% Mean (Low)", fmtFloat(st.ciLow,6)],
+      ["IC95% Mean (High)", fmtFloat(st.ciHigh,6)],
+      ["Coeff. of Variation (%)", fmtFloat(st.cv,4)],
+      ["Min", fmtFloat(st.min,6)],
+      ["Max", fmtFloat(st.max,6)],
+      ["Range", fmtFloat(st.range,6)],
+      ["P01", fmtFloat(st.p01,6)],
+      ["P05", fmtFloat(st.p05,6)],
+      ["P10", fmtFloat(st.p10,6)],
+      ["P25 (Q1)", fmtFloat(st.p25,6)],
+      ["P50 (Mediana)", fmtFloat(st.p50,6)],
+      ["P75 (Q3)", fmtFloat(st.p75,6)],
+      ["P90", fmtFloat(st.p90,6)],
+      ["P95", fmtFloat(st.p95,6)],
+      ["P99", fmtFloat(st.p99,6)],
+      ["IQR (Q3 - Q1)", fmtFloat(st.iqr,6)],
+      ["Skewness", fmtFloat(st.skewness,6)],
+      ["Kurtosis (exceso)", fmtFloat(st.kurtosis,6)]
+    ];
+    rows.forEach(([k,v])=>{
+      html += "<tr><td style='font-weight:600;background:#0f172a;'>"+escapeHTML(k)+"</td><td>"+escapeHTML(String(v))+"</td></tr>";
+    });
+  }else if(st.type === "categorical"){
+    const rows = [
+      ["Columna", col],
+      ["Tipo", "categórica"],
+      ["N (filas totales)", st.total],
+      ["Missing", st.missing],
+      ["Non-missing", st.total - st.missing],
+      ["Unique (no nulos)", st.unique],
+      ["Moda (Top categoría)", st.top],
+      ["Freq (Moda)", st.freq]
+    ];
+    rows.forEach(([k,v])=>{
+      html += "<tr><td style='font-weight:600;background:#0f172a;'>"+escapeHTML(k)+"</td><td>"+escapeHTML(String(v))+"</td></tr>";
+    });
+
+    // Tabla de frecuencias (Top 20)
+    html += "<tr><td colspan='2'>";
+    html += "<div style='margin-top:6px; font-weight:600;'>Tabla de frecuencias (Top 20 categorías):</div>";
+    html += "<table style='margin-top:4px; font-size:0.78rem; border-collapse:collapse; width:100%;'>";
+    html += "<thead><tr><th>Categoría</th><th>Frecuencia</th><th>%</th></tr></thead><tbody>";
+    const topCats = st.catArray.slice(0,20);
+    const totalNonMissing = st.total - st.missing || 1;
+    if(topCats.length === 0){
+      html += "<tr><td colspan='3' class='muted'>Sin categorías para mostrar.</td></tr>";
+    }else{
+      topCats.forEach(([val,freq])=>{
+        const pct = (freq/totalNonMissing)*100;
+        html += "<tr>";
+        html += "<td>"+escapeHTML(String(val))+"</td>";
+        html += "<td>"+escapeHTML(String(freq))+"</td>";
+        html += "<td>"+escapeHTML(fmtFloat(pct,2))+"%</td>";
+        html += "</tr>";
+      });
+    }
+    html += "</tbody></table>";
+    html += "</td></tr>";
+  }else{
+    html += "<tr><td colspan='2'>Sin información.</td></tr>";
+  }
+
+  html += "</table></div>";
+  cont.innerHTML = html;
+}
+
+document.getElementById("stats-column").addEventListener("change", updateStats);
+
+/* ======================= STACK (apilar) ======================= */
+document.getElementById("stack-btn").addEventListener("click", function(){
+  if(!dfWork || !dfWork.columns || !dfWork.columns.length){
+    alert("Primero carga un CSV.");
+    return;
+  }
+  const cols = dfWork.columns;
+  const idVars = getSelectedValues(document.getElementById("stack-idvars"));
+  let valueVars = getSelectedValues(document.getElementById("stack-valuevars"));
+  if(!valueVars.length){
+    valueVars = cols.filter(c => !idVars.includes(c));
+  }
+  if(!valueVars.length){
+    document.getElementById("stack-result").innerHTML =
+      "<div class='muted'>❌ No hay columnas para apilar. Selecciona <b>value_vars</b> o deja vacío para usar todas menos id_vars.</div>";
+    return;
+  }
+  const varName = document.getElementById("stack-varname").value.trim() || "variable";
+  const valueName = document.getElementById("stack-valuename").value.trim() || "value";
+  const dropNa = document.getElementById("stack-dropna").checked;
+
+  const newCols = [...idVars, varName, valueName];
+  const newRows = [];
+
+  for(const row of dfWork.rows){
+    valueVars.forEach(vcol => {
+      const nr = {};
+      idVars.forEach(id => { nr[id] = row[id]; });
+      nr[varName] = vcol;
+      nr[valueName] = row[vcol];
+      if(dropNa){
+        if(nr[valueName] === null || nr[valueName] === undefined || nr[valueName] === ""){
+          return;
+        }
+      }
+      newRows.push(nr);
+    });
+  }
+
+  dfWork = {columns:newCols, rows:newRows};
+
+  document.getElementById("stack-result").innerHTML =
+    "<div class='muted'>✅ STACK generado. Dimensiones: <b>"+dfWork.rows.length+"</b> filas × <b>"+dfWork.columns.length+"</b> columnas.<br>Vista — primeras 10 filas:</div>" +
+    renderTable(dfWork,10);
+
+  document.getElementById("preview-table").innerHTML = renderTable(dfWork,10);
+  document.getElementById("final-info").innerHTML =
+    "df_work actual · Filas: <b>"+dfWork.rows.length+"</b> | Columnas: <b>"+dfWork.columns.length+"</b>";
+
+  refreshAllControls();
+  updateChart();
+  updateStats();
+});
+
+/* ======================= SPLIT ======================= */
+document.getElementById("split-btn").addEventListener("click", function(){
+  if(!dfWork || !dfWork.columns || !dfWork.columns.length){
+    alert("Primero carga un CSV.");
+    return;
+  }
+  const colBase = document.getElementById("split-base").value;
+  const colShow = document.getElementById("split-show").value;
+  if(!colBase){
+    document.getElementById("split-status").innerHTML =
+      "<div class='muted'>❌ Selecciona la columna base.</div>";
+    return;
+  }
+  // Contar grupos
+  const groups = {};
+  dfWork.rows.forEach(r => {
+    const key = String(r[colBase] ?? "NA");
+    groups[key] = true;
+  });
+  const nGroups = Object.keys(groups).length;
+  document.getElementById("split-status").innerHTML =
+    "ℹ️ Detectados <b>"+nGroups+"</b> grupos por <code>"+escapeHTML(colBase)+"</code>. (No se filtra, solo se informa)";
+
+  let dataView;
+  if(colShow && colShow !== "(ninguna)" && dfWork.columns.includes(colShow)){
+    dataView = {
+      columns:[colBase,colShow],
+      rows:dfWork.rows.map(r=>{
+        const o = {};
+        o[colBase] = r[colBase];
+        o[colShow] = r[colShow];
+        return o;
+      })
+    };
+  }else{
+    dataView = dfWork;
+  }
+  document.getElementById("split-result").innerHTML =
+    "<div class='muted'>Primeras 10 filas de la tabla completa (vista seleccionada):</div>" +
+    renderTable(dataView,10);
+});
+
+/* ======================= EXPORTAR CSV ======================= */
+document.getElementById("export-btn").addEventListener("click", function(){
+  if(!dfWork || !dfWork.columns || !dfWork.columns.length){
+    alert("Nada que exportar (df_work vacío).");
+    return;
+  }
+  let fname = document.getElementById("export-name").value.trim();
+  if(!fname) fname = baseFileName + "_final.csv";
+  if(!/\.csv$/i.test(fname)) fname += ".csv";
+  fname = sanitizeFilename(fname);
+
+  const csv = dfToCSV(dfWork);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  document.getElementById("final-info").innerHTML =
+    "✅ CSV exportado como <code>"+escapeHTML(fname)+"</code>.";
+});
+
+function dfToCSV(data){
+  const cols = data.columns || [];
+  const rows = data.rows || [];
+  const esc = v => {
+    if(v === null || v === undefined) v = "";
+    v = String(v);
+    if(/[";,\n]/.test(v)){
+      v = '"' + v.replace(/"/g,'""') + '"';
+    }
+    return v;
+  };
+  let out = cols.map(esc).join(",") + "\n";
+  rows.forEach(r => {
+    const line = cols.map(c => esc(r[c])).join(",");
+    out += line + "\n";
+  });
+  return out;
+}
+
+/* ======================= RESET (volver al original) ======================= */
+document.getElementById("reset-btn").addEventListener("click", function(){
+  if(!dfOriginal){
+    alert("No hay CSV original cargado.");
+    return;
+  }
+  dfWork = deepCopy(dfOriginal);
+  document.getElementById("preview-table").innerHTML = renderTable(dfWork,10);
+  refreshAllControls();
+  updateChart();
+  updateStats();
+  document.getElementById("final-info").innerHTML =
+    "🔁 df_work ha sido restablecido al CSV original.";
+});
+</script>
+</body>
+</html>
